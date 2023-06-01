@@ -39,37 +39,60 @@ async function onSearch(e) {
 
   page = 1;
 
-  const response = await fetchImages(searchQuery, page, per_page);
-  const totalImages = response.data.totalHits;
-  images = response.data.hits;
-  totalPages = totalImages / per_page;
+  try {
+    const response = await fetchImages(searchQuery, page, per_page);
+    const totalImages = response.data.totalHits;
+    images = response.data.hits;
+    totalPages = totalImages / per_page;
 
-  if (images.length > 0) {
-    Notify.success(`Hooray! We found ${totalImages} images.`);
-    unlockLoadMoreBtn();
-  } else {
-    Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-    lockLoadMoreBtn();
+    if (images.length > 0) {
+      Notify.success(`Hooray! We found ${totalImages} images.`);
+      unlockLoadMoreBtn();
+    } else {
+      Notify.failure(
+        'Sorry, there are no images matching your search query. Please try again.'
+      );
+      lockLoadMoreBtn();
+    }
+    cleanMarkup();
+    render();
+
+    page += 1;
+    const response2 = await fetchImages(searchQuery, page, per_page);
+    images = response2.data.hits;
+    const totalImages2 = response2.data.totalHits;
+    totalPages = totalImages2 / per_page;
+
+    if (totalPages <= page) {
+      Notify.info("We're sorry, but you've reached the end of search results.");
+      lockLoadMoreBtn();
+    }
+    render();
+    smoothScroll('.gallery');
+  } catch (error) {
+    console.error(`Error: ${error}`);
+    Notify.failure('An unexpected error occurred. Please try again later.');
   }
-  cleanMarkup();
-  render();
 }
 
 async function onLoadMore(e) {
-  page += 1;
-  const response = await fetchImages(searchQuery, page, per_page);
-  images = response.data.hits;
-  const totalImages = response.data.totalHits;
-  totalPages = totalImages / per_page;
+try {
+page += 1;
+const response = await fetchImages(searchQuery, page, per_page);
+images = response.data.hits;
+const totalImages = response.data.totalHits;
+totalPages = totalImages / per_page;
 
-  if (totalPages <= page) {
-    Notify.info("We're sorry, but you've reached the end of search results.");
-    lockLoadMoreBtn();
-  }
-  render();
-  smoothScroll('.gallery');
+
+if (totalPages <= page) {
+  Notify.info("We're sorry, but you've reached the end of search results.");
+  lockLoadMoreBtn();
+}
+render();
+smoothScroll('.gallery');
+} catch (error) {
+console.log(error);
+}
 }
 
 function render() {
@@ -79,7 +102,7 @@ function render() {
 
   refs.gallery.insertAdjacentHTML('beforeend', galleryMarkup.join(''));
 
-  const lightbox = new SimpleLightbox('.gallery a');
+  let lightbox = new SimpleLightbox('.gallery a');
   lightbox.refresh();
 }
 
